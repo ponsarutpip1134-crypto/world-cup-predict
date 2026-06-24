@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ ทำนายผลบอลโลก</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+    .topbar { background: #1a3a1a; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 10px; }
+    .topbar h1 { font-size: 18px; font-weight: 600; }
+    .topbar span { font-size: 22px; }
+    .container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+    .tabs { display: flex; gap: 4px; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { flex: 1; min-width: 70px; padding: 9px 6px; text-align: center; font-size: 12px; border-radius: 7px; cursor: pointer; color: #666; transition: all 0.15s; }
+    .tab.active { background: #1a3a1a; color: #fff; font-weight: 600; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+    .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 14px; }
+    .teams-row { display: flex; align-items: center; gap: 10px; }
+    .team-select { flex: 1; }
+    select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; cursor: pointer; }
+    select:focus { outline: none; border-color: #1a3a1a; }
+    .vs-label { font-size: 11px; font-weight: 700; color: #999; flex-shrink: 0; }
+    .btn { display: block; width: 100%; margin-top: 14px; padding: 12px; background: #1a3a1a; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .btn:hover { background: #2a5a2a; }
+    .btn-outline { background: #fff; color: #1a3a1a; border: 1.5px solid #1a3a1a; }
+    .btn-outline:hover { background: #f0f7f0; }
+    .btn-sm { display: inline-block; width: auto; padding: 6px 14px; font-size: 12px; margin-top: 0; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .result-box { display: none; margin-top: 16px; background: #f8faf8; border: 1px solid #c8e0c8; border-radius: 10px; padding: 16px; }
+    .result-box.show { display: block; }
+    .result-teams { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .result-team { text-align: center; flex: 1; }
+    .result-team .flag { font-size: 36px; display: block; }
+    .result-team .rname { font-size: 12px; color: #555; margin-top: 4px; }
+    .score-box { font-size: 32px; font-weight: 700; color: #1a3a1a; text-align: center; flex-shrink: 0; min-width: 90px; }
+    .bars { margin-top: 4px; }
+    .bar-labels { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-bottom: 5px; }
+    .bar-track { height: 8px; background: #e8e8e8; border-radius: 4px; overflow: hidden; display: flex; }
+    .bar-a { height: 100%; background: #2563eb; transition: width 0.5s; }
+    .bar-b { height: 100%; background: #dc2626; transition: width 0.5s; }
+    .winner-text { text-align: center; margin-top: 10px; font-size: 14px; font-weight: 600; color: #1a3a1a; }
+    .bracket-item { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+    .stage-badge { font-size: 10px; background: #eef5ee; color: #2a5a2a; border-radius: 4px; padding: 3px 7px; font-weight: 600; min-width: 80px; text-align: center; flex-shrink: 0; }
+    .matchup { flex: 1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .win-team { font-weight: 700; color: #1a1a1a; }
+    .lose-team { color: #aaa; }
+    .through-badge { font-size: 11px; color: #2a5a2a; font-weight: 600; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-val { font-size: 24px; font-weight: 700; color: #1a3a1a; }
+    .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+    .rank-item { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+    .rank-num { font-size: 13px; color: #aaa; min-width: 22px; text-align: center; }
+    .rank-flag { font-size: 22px; }
+    .rank-info { flex: 1; }
+    .rank-name { font-size: 14px; font-weight: 600; }
+    .rank-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .rank-bar-wrap { height: 4px; background: #eee; border-radius: 2px; margin-top: 5px; }
+    .rank-bar-fill { height: 100%; background: #2a5a2a; border-radius: 2px; }
+    .rank-pts { font-size: 13px; font-weight: 700; color: #1a3a1a; }
+    .analysis-panel { display: none; margin-top: 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; }
+    .analysis-panel.show { display: block; }
+    .analysis-header { background: #1a3a1a; color: #fff; padding: 10px 16px; font-size: 13px; font-weight: 600; }
+    .analysis-body { padding: 14px 16px; }
+    .scenario-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .scenario-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; background: #f8f8f6; border-left: 3px solid #ccc; }
+    .scenario-item.likely { border-left-color: #2a5a2a; background: #f0f7f0; }
+    .scenario-item.possible { border-left-color: #d97706; background: #fffbf0; }
+    .scenario-item.upset { border-left-color: #dc2626; background: #fff5f5; }
+    .scenario-icon { font-size: 18px; flex-shrink: 0; }
+    .scenario-content { flex: 1; }
+    .scenario-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .scenario-desc { font-size: 12px; color: #555; line-height: 1.5; }
+    .scenario-prob { font-size: 12px; font-weight: 700; flex-shrink: 0; padding: 2px 8px; border-radius: 20px; background: #e8e8e8; color: #444; align-self: center; }
+    .scenario-item.likely .scenario-prob { background: #c8e0c8; color: #1a3a1a; }
+    .scenario-item.possible .scenario-prob { background: #fde68a; color: #78350f; }
+    .scenario-item.upset .scenario-prob { background: #fecaca; color: #7f1d1d; }
+    .analysis-loading { text-align: center; padding: 20px; color: #aaa; font-size: 13px; }
+
+    /* H2H */
+    .h2h-select-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .h2h-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+    .h2h-card-header { background: #1a3a1a; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .h2h-card-title { font-size: 14px; font-weight: 600; }
+    .h2h-card-sub { font-size: 11px; opacity: 0.75; }
+    .h2h-summary { display: grid; grid-template-columns: 1fr 60px 1fr; text-align: center; border-bottom: 1px solid #eee; }
+    .h2h-team-col { padding: 16px 10px; }
+    .h2h-team-flag { font-size: 28px; }
+    .h2h-team-name { font-size: 12px; color: #555; margin-top: 4px; }
+    .h2h-wins { font-size: 28px; font-weight: 700; color: #1a3a1a; margin-top: 4px; }
+    .h2h-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-left: 1px solid #eee; border-right: 1px solid #eee; padding: 10px 0; }
+    .h2h-draw-num { font-size: 20px; font-weight: 700; color: #888; }
+    .h2h-draw-lbl { font-size: 10px; color: #aaa; }
+    .h2h-history { padding: 12px 16px; }
+    .h2h-history-title { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .h2h-match-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+    .h2h-match-row:last-child { border-bottom: none; }
+    .h2h-match-date { font-size: 11px; color: #aaa; min-width: 90px; }
+    .h2h-match-teams { flex: 1; }
+    .h2h-match-score { font-weight: 700; color: #1a3a1a; min-width: 50px; text-align: center; }
+    .h2h-match-winner { font-size: 11px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+    .h2h-match-winner.a { background: #dbeafe; color: #1d4ed8; }
+    .h2h-match-winner.b { background: #fee2e2; color: #b91c1c; }
+    .h2h-match-winner.draw { background: #f3f4f6; color: #6b7280; }
+    .h2h-match-source { font-size: 10px; padding: 1px 6px; border-radius: 8px; }
+    .h2h-match-source.historical { background: #fef9c3; color: #854d0e; }
+    .h2h-match-source.predicted { background: #ede9fe; color: #6d28d9; }
+    .h2h-empty { text-align: center; padding: 32px; color: #aaa; font-size: 14px; }
+    .h2h-db-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .h2h-db-title { font-size: 14px; font-weight: 600; }
+    .h2h-db-count { font-size: 12px; color: #888; margin-top: 2px; }
+    .h2h-pair-item { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; transition: background 0.1s; }
+    .h2h-pair-item:hover { background: #f8faf8; }
+    .h2h-pair-teams { flex: 1; font-size: 13px; font-weight: 600; }
+    .h2h-pair-stats { font-size: 12px; color: #888; }
+    .h2h-pair-badge { font-size: 11px; background: #eef5ee; color: #2a5a2a; border-radius: 4px; padding: 2px 8px; font-weight: 600; }
+    .year-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .year-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; color: #555; }
+    .year-btn.active { background: #1a3a1a; color: #fff; border-color: #1a3a1a; }
+    .h2h-stats-bar { margin-top: 12px; padding: 12px 16px; background: #f8faf8; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; text-align: center; }
+    .h2h-mini-stat .val { font-size: 18px; font-weight: 700; color: #1a3a1a; }
+    .h2h-mini-stat .lbl { font-size: 10px; color: #aaa; margin-top: 2px; }
+    .source-legend { display: flex; gap: 10px; align-items: center; font-size: 11px; color: #888; }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+<div class="topbar"><span>⚽</span><h1>ทำนายผลฟุตบอลโลก 2026</h1></div>
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('predict')">🎯 ทำนายนัด</div>
+    <div class="tab" onclick="switchTab('bracket')">🏆 สายการแข่ง</div>
+    <div class="tab" onclick="switchTab('ranking')">📊 อันดับทีม</div>
+    <div class="tab" onclick="switchTab('h2h')">⚔️ Head-to-Head</div>
+  </div>
+
+  <!-- PREDICT -->
+  <div class="section active" id="tab-predict">
+    <div class="card">
+      <div class="card-label">เลือกทีมที่ต้องการทำนาย</div>
+      <div class="teams-row">
+        <div class="team-select"><select id="teamA" onchange="clearResult()"><option value="">— ทีม A —</option></select></div>
+        <div class="vs-label">VS</div>
+        <div class="team-select"><select id="teamB" onchange="clearResult()"><option value="">— ทีม B —</option></select></div>
+      </div>
+      <button class="btn" onclick="predictMatch()">🔮 ทำนายผล</button>
+      <div class="result-box" id="resultBox">
+        <div class="result-teams">
+          <div class="result-team"><span class="flag" id="flagA">🏳</span><div class="rname" id="nameA">—</div></div>
+          <div class="score-box" id="scoreDisplay">0 – 0</div>
+          <div class="result-team"><span class="flag" id="flagB">🏳</span><div class="rname" id="nameB">—</div></div>
+        </div>
+        <div class="bars">
+          <div class="bar-labels"><span id="pctA">50%</span><span style="color:#aaa;">โอกาสชนะ</span><span id="pctB">50%</span></div>
+          <div class="bar-track"><div class="bar-a" id="barA" style="width:50%;"></div><div class="bar-b" id="barB" style="width:50%;"></div></div>
+        </div>
+        <div class="winner-text" id="winnerText"></div>
+      </div>
+    </div>
+    <div class="analysis-panel" id="analysisPanel">
+      <div class="analysis-header">🧠 วิเคราะห์ความเป็นไปได้ในนัดนี้</div>
+      <div class="analysis-body">
+        <div class="analysis-loading" id="analysisLoading">⏳ กำลังวิเคราะห์...</div>
+        <ul class="scenario-list" id="scenarioList" style="display:none;"></ul>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;">ผลทำนายรวมข้อมูลย้อนหลัง 16 ปี (2006–2022) 💾</p>
+  </div>
+
+  <!-- BRACKET -->
+  <div class="section" id="tab-bracket">
+    <button class="btn btn-outline" style="margin-bottom:16px;" onclick="renderBracket()">🔀 สุ่มสายการแข่งขันใหม่</button>
+    <div id="bracketList"></div>
+  </div>
+
+  <!-- RANKING -->
+  <div class="section" id="tab-ranking">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">48</div><div class="stat-lbl">ทีมเข้าแข่งขัน</div></div>
+      <div class="stat-card"><div class="stat-val">104</div><div class="stat-lbl">นัดทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-val">12</div><div class="stat-lbl">กลุ่ม A–L</div></div>
+      <div class="stat-card"><div class="stat-val">2026</div><div class="stat-lbl">ฟุตบอลโลก</div></div>
+    </div>
+    <div id="rankingList"></div>
+  </div>
+
+  <!-- HEAD TO HEAD -->
+  <div class="section" id="tab-h2h">
+    <div class="card">
+      <div class="card-label">ค้นหาสถิติการพบกัน</div>
+      <div class="h2h-select-row">
+        <div class="team-select"><select id="h2hA"><option value="">— ทีม A —</option></select></div>
+        <div class="vs-label">VS</div>
+        <div class="team-select"><select id="h2hB"><option value="">— ทีม B —</option></select></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;">กรองตามปี:</div>
+        <div class="year-filter" id="yearFilter">
+          <button class="year-btn active" onclick="setYear('all',this)">ทั้งหมด</button>
+          <button class="year-btn" onclick="setYear('2006',this)">2006</button>
+          <button class="year-btn" onclick="setYear('2010',this)">2010</button>
+          <button class="year-btn" onclick="setYear('2014',this)">2014</button>
+          <button class="year-btn" onclick="setYear('2018',this)">2018</button>
+          <button class="year-btn" onclick="setYear('2022',this)">2022</button>
+        </div>
+      </div>
+      <button class="btn" onclick="showH2H()">🔍 ดูสถิติ</button>
+    </div>
+    <div id="h2hResult"></div>
+    <div class="card">
+      <div class="h2h-db-header">
+        <div>
+          <div class="h2h-db-title">📂 ฐานข้อมูลนัดที่เคยพบกัน</div>
+          <div class="h2h-db-count" id="h2hDbCount">กำลังโหลด...</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="clearUserH2H()">🗑 ล้างนัดทำนาย</button>
+      </div>
+      <div id="h2hDbList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   TEAMS
+============================================================ */
+// ✅ ทีมที่ผ่านเข้ารอบบอลโลก 2026 ครบ 48 ทีม
+const TEAMS = [
+  // ⭐ CONMEBOL — อเมริกาใต้ (6 ทีม)
+  { name:"บราซิล",          flag:"🇧🇷", rating:2150, champ:22, conf:"CONMEBOL" },
+  { name:"อาร์เจนตินา",    flag:"🇦🇷", rating:2090, champ:24, conf:"CONMEBOL" },
+  { name:"โคลอมเบีย",       flag:"🇨🇴", rating:1900, champ:8,  conf:"CONMEBOL" },
+  { name:"อุรุกวัย",        flag:"🇺🇾", rating:1870, champ:7,  conf:"CONMEBOL" },
+  { name:"เอกวาดอร์",       flag:"🇪🇨", rating:1780, champ:2,  conf:"CONMEBOL" },
+  { name:"ปารากวัย",        flag:"🇵🇾", rating:1720, champ:1,  conf:"CONMEBOL" },
+
+  // ⭐ UEFA — ยุโรป (16 ทีม)
+  { name:"ฝรั่งเศส",        flag:"🇫🇷", rating:2085, champ:18, conf:"UEFA" },
+  { name:"อังกฤษ",          flag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", rating:2020, champ:14, conf:"UEFA" },
+  { name:"สเปน",            flag:"🇪🇸", rating:2010, champ:16, conf:"UEFA" },
+  { name:"เยอรมนี",         flag:"🇩🇪", rating:1980, champ:17, conf:"UEFA" },
+  { name:"โปรตุเกส",        flag:"🇵🇹", rating:1960, champ:10, conf:"UEFA" },
+  { name:"เนเธอร์แลนด์",   flag:"🇳🇱", rating:1935, champ:11, conf:"UEFA" },
+  { name:"เบลเยียม",        flag:"🇧🇪", rating:1920, champ:9,  conf:"UEFA" },
+  { name:"โครเอเชีย",       flag:"🇭🇷", rating:1910, champ:8,  conf:"UEFA" },
+  { name:"สวิตเซอร์แลนด์", flag:"🇨🇭", rating:1890, champ:6,  conf:"UEFA" },
+  { name:"ออสเตรีย",        flag:"🇦🇹", rating:1840, champ:5,  conf:"UEFA" },
+  { name:"นอร์เวย์",        flag:"🇳🇴", rating:1830, champ:4,  conf:"UEFA" },
+  { name:"สก็อตแลนด์",      flag:"🏴󠁧󠁢󠁳󠁣󠁴󠁿", rating:1790, champ:3,  conf:"UEFA" },
+  { name:"สวีเดน",          flag:"🇸🇪", rating:1800, champ:4,  conf:"UEFA" },
+  { name:"ตุรกี",           flag:"🇹🇷", rating:1810, champ:4,  conf:"UEFA" },
+  { name:"สาธารณรัฐเช็ก",   flag:"🇨🇿", rating:1770, champ:3,  conf:"UEFA" },
+  { name:"บอสเนียฯ",        flag:"🇧🇦", rating:1730, champ:1,  conf:"UEFA" },
+
+  // ⭐ AFC — เอเชีย (9 ทีม)
+  { name:"ญี่ปุ่น",         flag:"🇯🇵", rating:1860, champ:5,  conf:"AFC" },
+  { name:"เกาหลีใต้",       flag:"🇰🇷", rating:1820, champ:4,  conf:"AFC" },
+  { name:"ออสเตรเลีย",      flag:"🇦🇺", rating:1780, champ:3,  conf:"AFC" },
+  { name:"อิหร่าน",         flag:"🇮🇷", rating:1760, champ:2,  conf:"AFC" },
+  { name:"ซาอุดีอาระเบีย",  flag:"🇸🇦", rating:1730, champ:2,  conf:"AFC" },
+  { name:"กาตาร์",          flag:"🇶🇦", rating:1680, champ:1,  conf:"AFC" },
+  { name:"จอร์แดน",         flag:"🇯🇴", rating:1620, champ:0,  conf:"AFC" },
+  { name:"อิรัก",           flag:"🇮🇶", rating:1640, champ:0,  conf:"AFC" },
+  { name:"อุซเบกิสถาน",     flag:"🇺🇿", rating:1600, champ:0,  conf:"AFC" },
+
+  // ⭐ CAF — แอฟริกา (10 ทีม)
+  { name:"โมร็อกโก",        flag:"🇲🇦", rating:1870, champ:7,  conf:"CAF" },
+  { name:"เซเนกัล",         flag:"🇸🇳", rating:1800, champ:5,  conf:"CAF" },
+  { name:"อียิปต์",         flag:"🇪🇬", rating:1780, champ:4,  conf:"CAF" },
+  { name:"กาน่า",           flag:"🇬🇭", rating:1740, champ:2,  conf:"CAF" },
+  { name:"โกตดิวัวร์",      flag:"🇨🇮", rating:1770, champ:3,  conf:"CAF" },
+  { name:"แอลจีเรีย",       flag:"🇩🇿", rating:1760, champ:3,  conf:"CAF" },
+  { name:"ตูนิเซีย",        flag:"🇹🇳", rating:1700, champ:1,  conf:"CAF" },
+  { name:"แอฟริกาใต้",      flag:"🇿🇦", rating:1680, champ:1,  conf:"CAF" },
+  { name:"คองโก DR",        flag:"🇨🇩", rating:1660, champ:1,  conf:"CAF" },
+  { name:"กาบูเวร์ดี",      flag:"🇨🇻", rating:1580, champ:0,  conf:"CAF" },
+
+  // ⭐ CONCACAF — อเมริกาเหนือ/กลาง/แคริบเบียน (6 ทีม)
+  { name:"สหรัฐอเมริกา",   flag:"🇺🇸", rating:1870, champ:6,  conf:"CONCACAF" },
+  { name:"เม็กซิโก",        flag:"🇲🇽", rating:1850, champ:5,  conf:"CONCACAF" },
+  { name:"แคนาดา",          flag:"🇨🇦", rating:1810, champ:3,  conf:"CONCACAF" },
+  { name:"ปานามา",          flag:"🇵🇦", rating:1650, champ:1,  conf:"CONCACAF" },
+  { name:"เฮติ",            flag:"🇭🇹", rating:1580, champ:0,  conf:"CONCACAF" },
+  { name:"กือราเซา",        flag:"🇨🇼", rating:1540, champ:0,  conf:"CONCACAF" },
+
+  // ⭐ OFC — โอเชียเนีย (1 ทีม)
+  { name:"นิวซีแลนด์",      flag:"🇳🇿", rating:1560, champ:0,  conf:"OFC" },
+];
+
+/* ============================================================
+   HISTORICAL DATA 2006–2022 (ผลจริงจากบอลโลก)
+   source: ข้อมูลสาธารณะฟีฟ่า
+============================================================ */
+const HISTORICAL = [
+  // 2006 เยอรมนี — แชมป์ อิตาลี
+  {year:"2006",date:"9 มิ.ย. 2006",nameA:"เยอรมนี",nameB:"คอสตาริกา",scoreA:4,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"12 มิ.ย. 2006",nameA:"อังกฤษ",nameB:"ปารากวัย",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"13 มิ.ย. 2006",nameA:"อาร์เจนตินา",nameB:"โกตดิวัวร์",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"14 มิ.ย. 2006",nameA:"สเปน",nameB:"ยูเครน",scoreA:4,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"17 มิ.ย. 2006",nameA:"บราซิล",nameB:"โครเอเชีย",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"17 มิ.ย. 2006",nameA:"ฝรั่งเศส",nameB:"เกาหลีใต้",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"18 มิ.ย. 2006",nameA:"โปรตุเกส",nameB:"อิหร่าน",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"20 มิ.ย. 2006",nameA:"เยอรมนี",nameB:"โปแลนด์",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"21 มิ.ย. 2006",nameA:"อิตาลี",nameB:"สาธารณรัฐเช็ก",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"22 มิ.ย. 2006",nameA:"บราซิล",nameB:"ออสเตรเลีย",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"23 มิ.ย. 2006",nameA:"อาร์เจนตินา",nameB:"เนเธอร์แลนด์",scoreA:0,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"24 มิ.ย. 2006",nameA:"สเปน",nameB:"ซาอุดีอาระเบีย",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"24 มิ.ย. 2006",nameA:"โปรตุเกส",nameB:"เม็กซิโก",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2006",date:"26 มิ.ย. 2006",nameA:"เยอรมนี",nameB:"สวีเดน",scoreA:2,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"26 มิ.ย. 2006",nameA:"อาร์เจนตินา",nameB:"เม็กซิโก",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"27 มิ.ย. 2006",nameA:"อังกฤษ",nameB:"เอกวาดอร์",scoreA:1,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"27 มิ.ย. 2006",nameA:"โปรตุเกส",nameB:"เนเธอร์แลนด์",scoreA:1,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"28 มิ.ย. 2006",nameA:"อิตาลี",nameB:"ออสเตรเลีย",scoreA:1,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"28 มิ.ย. 2006",nameA:"สวิตเซอร์แลนด์",nameB:"ยูเครน",scoreA:0,scoreB:3,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"30 มิ.ย. 2006",nameA:"บราซิล",nameB:"กาน่า",scoreA:3,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"30 มิ.ย. 2006",nameA:"สเปน",nameB:"ฝรั่งเศส",scoreA:1,scoreB:3,stage:"รอบ 16 ทีม"},
+  {year:"2006",date:"1 ก.ค. 2006",nameA:"เยอรมนี",nameB:"อาร์เจนตินา",scoreA:1,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2006",date:"1 ก.ค. 2006",nameA:"อิตาลี",nameB:"ยูเครน",scoreA:3,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2006",date:"2 ก.ค. 2006",nameA:"อังกฤษ",nameB:"โปรตุเกส",scoreA:0,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2006",date:"2 ก.ค. 2006",nameA:"บราซิล",nameB:"ฝรั่งเศส",scoreA:0,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2006",date:"4 ก.ค. 2006",nameA:"เยอรมนี",nameB:"อิตาลี",scoreA:0,scoreB:2,stage:"รอบรองชนะเลิศ"},
+  {year:"2006",date:"5 ก.ค. 2006",nameA:"โปรตุเกส",nameB:"ฝรั่งเศส",scoreA:0,scoreB:1,stage:"รอบรองชนะเลิศ"},
+  {year:"2006",date:"8 ก.ค. 2006",nameA:"เยอรมนี",nameB:"โปรตุเกส",scoreA:3,scoreB:1,stage:"ชิงอันดับ 3"},
+  {year:"2006",date:"9 ก.ค. 2006",nameA:"อิตาลี",nameB:"ฝรั่งเศส",scoreA:1,scoreB:1,stage:"รอบชิงชนะเลิศ"},
+
+  // 2010 แอฟริกาใต้ — แชมป์ สเปน
+  {year:"2010",date:"11 มิ.ย. 2010",nameA:"แอฟริกาใต้",nameB:"เม็กซิโก",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"12 มิ.ย. 2010",nameA:"อังกฤษ",nameB:"สหรัฐอเมริกา",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"12 มิ.ย. 2010",nameA:"อาร์เจนตินา",nameB:"ไนจีเรีย",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"13 มิ.ย. 2010",nameA:"เยอรมนี",nameB:"ออสเตรเลีย",scoreA:4,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"14 มิ.ย. 2010",nameA:"บราซิล",nameB:"เกาหลีเหนือ",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"14 มิ.ย. 2010",nameA:"สเปน",nameB:"สวิตเซอร์แลนด์",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"15 มิ.ย. 2010",nameA:"อิตาลี",nameB:"ปารากวัย",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"18 มิ.ย. 2010",nameA:"เนเธอร์แลนด์",nameB:"ญี่ปุ่น",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"18 มิ.ย. 2010",nameA:"บราซิล",nameB:"โกตดิวัวร์",scoreA:3,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"20 มิ.ย. 2010",nameA:"โปรตุเกส",nameB:"เกาหลีเหนือ",scoreA:7,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"23 มิ.ย. 2010",nameA:"อาร์เจนตินา",nameB:"เม็กซิโก",scoreA:3,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2010",date:"26 มิ.ย. 2010",nameA:"เยอรมนี",nameB:"อังกฤษ",scoreA:4,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"26 มิ.ย. 2010",nameA:"อาร์เจนตินา",nameB:"เม็กซิโก",scoreA:3,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"27 มิ.ย. 2010",nameA:"เนเธอร์แลนด์",nameB:"สโลวาเกีย",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"28 มิ.ย. 2010",nameA:"บราซิล",nameB:"ชิลี",scoreA:3,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"28 มิ.ย. 2010",nameA:"โปรตุเกส",nameB:"สเปน",scoreA:0,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"29 มิ.ย. 2010",nameA:"อุรุกวัย",nameB:"เกาหลีใต้",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"29 มิ.ย. 2010",nameA:"สหรัฐอเมริกา",nameB:"กาน่า",scoreA:1,scoreB:2,stage:"รอบ 16 ทีม"},
+  {year:"2010",date:"2 ก.ค. 2010",nameA:"เนเธอร์แลนด์",nameB:"บราซิล",scoreA:2,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2010",date:"2 ก.ค. 2010",nameA:"อุรุกวัย",nameB:"กาน่า",scoreA:1,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2010",date:"3 ก.ค. 2010",nameA:"อาร์เจนตินา",nameB:"เยอรมนี",scoreA:0,scoreB:4,stage:"รอบ 8 ทีม"},
+  {year:"2010",date:"3 ก.ค. 2010",nameA:"สเปน",nameB:"ปารากวัย",scoreA:1,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2010",date:"6 ก.ค. 2010",nameA:"อุรุกวัย",nameB:"เนเธอร์แลนด์",scoreA:2,scoreB:3,stage:"รอบรองชนะเลิศ"},
+  {year:"2010",date:"7 ก.ค. 2010",nameA:"เยอรมนี",nameB:"สเปน",scoreA:0,scoreB:1,stage:"รอบรองชนะเลิศ"},
+  {year:"2010",date:"10 ก.ค. 2010",nameA:"เยอรมนี",nameB:"อุรุกวัย",scoreA:3,scoreB:2,stage:"ชิงอันดับ 3"},
+  {year:"2010",date:"11 ก.ค. 2010",nameA:"เนเธอร์แลนด์",nameB:"สเปน",scoreA:0,scoreB:1,stage:"รอบชิงชนะเลิศ"},
+
+  // 2014 บราซิล — แชมป์ เยอรมนี
+  {year:"2014",date:"12 มิ.ย. 2014",nameA:"บราซิล",nameB:"โครเอเชีย",scoreA:3,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"13 มิ.ย. 2014",nameA:"เม็กซิโก",nameB:"แคเมอรูน",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"13 มิ.ย. 2014",nameA:"สเปน",nameB:"เนเธอร์แลนด์",scoreA:1,scoreB:5,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"14 มิ.ย. 2014",nameA:"อังกฤษ",nameB:"อิตาลี",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"15 มิ.ย. 2014",nameA:"อาร์เจนตินา",nameB:"บอสเนีย",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"16 มิ.ย. 2014",nameA:"เยอรมนี",nameB:"โปรตุเกส",scoreA:4,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"17 มิ.ย. 2014",nameA:"บราซิล",nameB:"เม็กซิโก",scoreA:0,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"17 มิ.ย. 2014",nameA:"อุรุกวัย",nameB:"อังกฤษ",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"18 มิ.ย. 2014",nameA:"ญี่ปุ่น",nameB:"กรีซ",scoreA:0,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"18 มิ.ย. 2014",nameA:"สหรัฐอเมริกา",nameB:"กาน่า",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"19 มิ.ย. 2014",nameA:"ฝรั่งเศส",nameB:"ฮอนดูรัส",scoreA:3,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"20 มิ.ย. 2014",nameA:"โปรตุเกส",nameB:"สหรัฐอเมริกา",scoreA:2,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"22 มิ.ย. 2014",nameA:"เยอรมนี",nameB:"กาน่า",scoreA:2,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2014",date:"28 มิ.ย. 2014",nameA:"บราซิล",nameB:"ชิลี",scoreA:1,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"28 มิ.ย. 2014",nameA:"โคลอมเบีย",nameB:"อุรุกวัย",scoreA:2,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"29 มิ.ย. 2014",nameA:"ฝรั่งเศส",nameB:"ไนจีเรีย",scoreA:2,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"29 มิ.ย. 2014",nameA:"เยอรมนี",nameB:"แอลจีเรีย",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"30 มิ.ย. 2014",nameA:"อาร์เจนตินา",nameB:"สวิตเซอร์แลนด์",scoreA:1,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"30 มิ.ย. 2014",nameA:"เนเธอร์แลนด์",nameB:"เม็กซิโก",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"1 ก.ค. 2014",nameA:"สเปน",nameB:"ชิลี",scoreA:0,scoreB:2,stage:"รอบ 16 ทีม"},
+  {year:"2014",date:"4 ก.ค. 2014",nameA:"ฝรั่งเศส",nameB:"เยอรมนี",scoreA:0,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2014",date:"4 ก.ค. 2014",nameA:"บราซิล",nameB:"โคลอมเบีย",scoreA:2,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2014",date:"5 ก.ค. 2014",nameA:"อาร์เจนตินา",nameB:"เบลเยียม",scoreA:1,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2014",date:"5 ก.ค. 2014",nameA:"เนเธอร์แลนด์",nameB:"คอสตาริกา",scoreA:0,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2014",date:"8 ก.ค. 2014",nameA:"บราซิล",nameB:"เยอรมนี",scoreA:1,scoreB:7,stage:"รอบรองชนะเลิศ"},
+  {year:"2014",date:"9 ก.ค. 2014",nameA:"เนเธอร์แลนด์",nameB:"อาร์เจนตินา",scoreA:0,scoreB:0,stage:"รอบรองชนะเลิศ"},
+  {year:"2014",date:"12 ก.ค. 2014",nameA:"บราซิล",nameB:"เนเธอร์แลนด์",scoreA:0,scoreB:3,stage:"ชิงอันดับ 3"},
+  {year:"2014",date:"13 ก.ค. 2014",nameA:"เยอรมนี",nameB:"อาร์เจนตินา",scoreA:1,scoreB:0,stage:"รอบชิงชนะเลิศ"},
+
+  // 2018 รัสเซีย — แชมป์ ฝรั่งเศส
+  {year:"2018",date:"14 มิ.ย. 2018",nameA:"รัสเซีย",nameB:"ซาอุดีอาระเบีย",scoreA:5,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"15 มิ.ย. 2018",nameA:"อียิปต์",nameB:"อุรุกวัย",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"15 มิ.ย. 2018",nameA:"โมร็อกโก",nameB:"อิหร่าน",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"15 มิ.ย. 2018",nameA:"โปรตุเกส",nameB:"สเปน",scoreA:3,scoreB:3,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"16 มิ.ย. 2018",nameA:"ฝรั่งเศส",nameB:"ออสเตรเลีย",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"16 มิ.ย. 2018",nameA:"อาร์เจนตินา",nameB:"ไอซ์แลนด์",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"16 มิ.ย. 2018",nameA:"เปรู",nameB:"เดนมาร์ก",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"16 มิ.ย. 2018",nameA:"โครเอเชีย",nameB:"ไนจีเรีย",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"17 มิ.ย. 2018",nameA:"คอสตาริกา",nameB:"เซอร์เบีย",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"17 มิ.ย. 2018",nameA:"เยอรมนี",nameB:"เม็กซิโก",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"17 มิ.ย. 2018",nameA:"บราซิล",nameB:"สวิตเซอร์แลนด์",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"19 มิ.ย. 2018",nameA:"สวีเดน",nameB:"เกาหลีใต้",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"19 มิ.ย. 2018",nameA:"เบลเยียม",nameB:"ปานามา",scoreA:3,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"20 มิ.ย. 2018",nameA:"ตูนิเซีย",nameB:"อังกฤษ",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"20 มิ.ย. 2018",nameA:"โคลอมเบีย",nameB:"ญี่ปุ่น",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"21 มิ.ย. 2018",nameA:"โปแลนด์",nameB:"เซเนกัล",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"22 มิ.ย. 2018",nameA:"อิหร่าน",nameB:"สเปน",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"23 มิ.ย. 2018",nameA:"เม็กซิโก",nameB:"เกาหลีใต้",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"23 มิ.ย. 2018",nameA:"เยอรมนี",nameB:"สวีเดน",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"25 มิ.ย. 2018",nameA:"อังกฤษ",nameB:"ปานามา",scoreA:6,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"26 มิ.ย. 2018",nameA:"ญี่ปุ่น",nameB:"โปแลนด์",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"27 มิ.ย. 2018",nameA:"เยอรมนี",nameB:"เกาหลีใต้",scoreA:0,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2018",date:"30 มิ.ย. 2018",nameA:"ฝรั่งเศส",nameB:"อาร์เจนตินา",scoreA:4,scoreB:3,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"30 มิ.ย. 2018",nameA:"อุรุกวัย",nameB:"โปรตุเกส",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"1 ก.ค. 2018",nameA:"สเปน",nameB:"รัสเซีย",scoreA:1,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"1 ก.ค. 2018",nameA:"โครเอเชีย",nameB:"เดนมาร์ก",scoreA:1,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"2 ก.ค. 2018",nameA:"บราซิล",nameB:"เม็กซิโก",scoreA:2,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"2 ก.ค. 2018",nameA:"เบลเยียม",nameB:"ญี่ปุ่น",scoreA:3,scoreB:2,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"3 ก.ค. 2018",nameA:"สวีเดน",nameB:"สวิตเซอร์แลนด์",scoreA:1,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"3 ก.ค. 2018",nameA:"โคลอมเบีย",nameB:"อังกฤษ",scoreA:1,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2018",date:"6 ก.ค. 2018",nameA:"อุรุกวัย",nameB:"ฝรั่งเศส",scoreA:0,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2018",date:"6 ก.ค. 2018",nameA:"บราซิล",nameB:"เบลเยียม",scoreA:1,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2018",date:"7 ก.ค. 2018",nameA:"สวีเดน",nameB:"อังกฤษ",scoreA:0,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2018",date:"7 ก.ค. 2018",nameA:"รัสเซีย",nameB:"โครเอเชีย",scoreA:2,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2018",date:"10 ก.ค. 2018",nameA:"ฝรั่งเศส",nameB:"เบลเยียม",scoreA:1,scoreB:0,stage:"รอบรองชนะเลิศ"},
+  {year:"2018",date:"11 ก.ค. 2018",nameA:"โครเอเชีย",nameB:"อังกฤษ",scoreA:2,scoreB:1,stage:"รอบรองชนะเลิศ"},
+  {year:"2018",date:"14 ก.ค. 2018",nameA:"เบลเยียม",nameB:"อังกฤษ",scoreA:2,scoreB:0,stage:"ชิงอันดับ 3"},
+  {year:"2018",date:"15 ก.ค. 2018",nameA:"ฝรั่งเศส",nameB:"โครเอเชีย",scoreA:4,scoreB:2,stage:"รอบชิงชนะเลิศ"},
+
+  // 2022 กาตาร์ — แชมป์ อาร์เจนตินา
+  {year:"2022",date:"20 พ.ย. 2022",nameA:"กาตาร์",nameB:"เอกวาดอร์",scoreA:0,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"21 พ.ย. 2022",nameA:"อังกฤษ",nameB:"อิหร่าน",scoreA:6,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"21 พ.ย. 2022",nameA:"เนเธอร์แลนด์",nameB:"เซเนกัล",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"22 พ.ย. 2022",nameA:"อาร์เจนตินา",nameB:"ซาอุดีอาระเบีย",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"22 พ.ย. 2022",nameA:"ฝรั่งเศส",nameB:"ออสเตรเลีย",scoreA:4,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"22 พ.ย. 2022",nameA:"โมร็อกโก",nameB:"โครเอเชีย",scoreA:0,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"23 พ.ย. 2022",nameA:"เยอรมนี",nameB:"ญี่ปุ่น",scoreA:1,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"23 พ.ย. 2022",nameA:"สเปน",nameB:"คอสตาริกา",scoreA:7,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"23 พ.ย. 2022",nameA:"เบลเยียม",nameB:"แคนาดา",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"24 พ.ย. 2022",nameA:"สวิตเซอร์แลนด์",nameB:"แคเมอรูน",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"24 พ.ย. 2022",nameA:"อุรุกวัย",nameB:"เกาหลีใต้",scoreA:0,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"24 พ.ย. 2022",nameA:"โปรตุเกส",nameB:"กาน่า",scoreA:3,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"25 พ.ย. 2022",nameA:"บราซิล",nameB:"เซอร์เบีย",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"25 พ.ย. 2022",nameA:"เวลส์",nameB:"อิหร่าน",scoreA:0,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"26 พ.ย. 2022",nameA:"ฝรั่งเศส",nameB:"เดนมาร์ก",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"26 พ.ย. 2022",nameA:"ตูนิเซีย",nameB:"ออสเตรเลีย",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"27 พ.ย. 2022",nameA:"สเปน",nameB:"เยอรมนี",scoreA:1,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"27 พ.ย. 2022",nameA:"ญี่ปุ่น",nameB:"คอสตาริกา",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"27 พ.ย. 2022",nameA:"เบลเยียม",nameB:"โมร็อกโก",scoreA:0,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"28 พ.ย. 2022",nameA:"โครเอเชีย",nameB:"แคนาดา",scoreA:4,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"28 พ.ย. 2022",nameA:"บราซิล",nameB:"สวิตเซอร์แลนด์",scoreA:1,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"29 พ.ย. 2022",nameA:"โปรตุเกส",nameB:"อุรุกวัย",scoreA:2,scoreB:0,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"30 พ.ย. 2022",nameA:"เกาหลีใต้",nameB:"โปรตุเกส",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"1 ธ.ค. 2022",nameA:"ญี่ปุ่น",nameB:"สเปน",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"1 ธ.ค. 2022",nameA:"เยอรมนี",nameB:"คอสตาริกา",scoreA:4,scoreB:2,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"1 ธ.ค. 2022",nameA:"โมร็อกโก",nameB:"แคนาดา",scoreA:2,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"2 ธ.ค. 2022",nameA:"บราซิล",nameB:"แคเมอรูน",scoreA:0,scoreB:1,stage:"รอบกลุ่ม"},
+  {year:"2022",date:"3 ธ.ค. 2022",nameA:"ฝรั่งเศส",nameB:"โปแลนด์",scoreA:3,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"3 ธ.ค. 2022",nameA:"อังกฤษ",nameB:"เซเนกัล",scoreA:3,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"4 ธ.ค. 2022",nameA:"ญี่ปุ่น",nameB:"โครเอเชีย",scoreA:1,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"4 ธ.ค. 2022",nameA:"บราซิล",nameB:"เกาหลีใต้",scoreA:4,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"5 ธ.ค. 2022",nameA:"โมร็อกโก",nameB:"สเปน",scoreA:0,scoreB:0,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"5 ธ.ค. 2022",nameA:"โปรตุเกส",nameB:"สวิตเซอร์แลนด์",scoreA:6,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"6 ธ.ค. 2022",nameA:"เนเธอร์แลนด์",nameB:"สหรัฐอเมริกา",scoreA:3,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"6 ธ.ค. 2022",nameA:"อาร์เจนตินา",nameB:"ออสเตรเลีย",scoreA:2,scoreB:1,stage:"รอบ 16 ทีม"},
+  {year:"2022",date:"9 ธ.ค. 2022",nameA:"โครเอเชีย",nameB:"บราซิล",scoreA:1,scoreB:1,stage:"รอบ 8 ทีม"},
+  {year:"2022",date:"9 ธ.ค. 2022",nameA:"เนเธอร์แลนด์",nameB:"อาร์เจนตินา",scoreA:2,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2022",date:"10 ธ.ค. 2022",nameA:"โมร็อกโก",nameB:"โปรตุเกส",scoreA:1,scoreB:0,stage:"รอบ 8 ทีม"},
+  {year:"2022",date:"10 ธ.ค. 2022",nameA:"อังกฤษ",nameB:"ฝรั่งเศส",scoreA:1,scoreB:2,stage:"รอบ 8 ทีม"},
+  {year:"2022",date:"13 ธ.ค. 2022",nameA:"อาร์เจนตินา",nameB:"โครเอเชีย",scoreA:3,scoreB:0,stage:"รอบรองชนะเลิศ"},
+  {year:"2022",date:"14 ธ.ค. 2022",nameA:"ฝรั่งเศส",nameB:"โมร็อกโก",scoreA:2,scoreB:0,stage:"รอบรองชนะเลิศ"},
+  {year:"2022",date:"17 ธ.ค. 2022",nameA:"โครเอเชีย",nameB:"โมร็อกโก",scoreA:2,scoreB:1,stage:"ชิงอันดับ 3"},
+  {year:"2022",date:"18 ธ.ค. 2022",nameA:"อาร์เจนตินา",nameB:"ฝรั่งเศส",scoreA:3,scoreB:3,stage:"รอบชิงชนะเลิศ"},
+];
+
+/* ============================================================
+   FLAGS LOOKUP (ชื่อที่ปรากฏในข้อมูลย้อนหลัง)
+============================================================ */
+const FLAG_MAP = {
+  "เยอรมนี":"🇩🇪","อิตาลี":"🇮🇹","บราซิล":"🇧🇷","ฝรั่งเศส":"🇫🇷","สเปน":"🇪🇸",
+  "อาร์เจนตินา":"🇦🇷","โปรตุเกส":"🇵🇹","อังกฤษ":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","เนเธอร์แลนด์":"🇳🇱","โครเอเชีย":"🇭🇷",
+  "เบลเยียม":"🇧🇪","สวิตเซอร์แลนด์":"🇨🇭","โปแลนด์":"🇵🇱","เม็กซิโก":"🇲🇽","อุรุกวัย":"🇺🇾",
+  "สหรัฐอเมริกา":"🇺🇸","เกาหลีใต้":"🇰🇷","ญี่ปุ่น":"🇯🇵","กาน่า":"🇬🇭","โมร็อกโก":"🇲🇦",
+  "เซเนกัล":"🇸🇳","ไนจีเรีย":"🇳🇬","ออสเตรเลีย":"🇦🇺","แคเมอรูน":"🇨🇲","โคลอมเบีย":"🇨🇴",
+  "เดนมาร์ก":"🇩🇰","อิหร่าน":"🇮🇷","ซาอุดีอาระเบีย":"🇸🇦","เอกวาดอร์":"🇪🇨","แคนาดา":"🇨🇦",
+  "รัสเซีย":"🇷🇺","สวีเดน":"🇸🇪","กาตาร์":"🇶🇦","ชิลี":"🇨🇱","คอสตาริกา":"🇨🇷",
+  "ยูเครน":"🇺🇦","แอลจีเรีย":"🇩🇿","ไอซ์แลนด์":"🇮🇸","ปานามา":"🇵🇦","เซอร์เบีย":"🇷🇸",
+  "ปารากวัย":"🇵🇾","สาธารณรัฐเช็ก":"🇨🇿","โกตดิวัวร์":"🇨🇮","บอสเนีย":"🇧🇦","ฮอนดูรัส":"🇭🇳",
+  "ตูนิเซีย":"🇹🇳","เวลส์":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","แอฟริกาใต้":"🇿🇦","กรีซ":"🇬🇷","เปรู":"🇵🇪",
+  "สโลวาเกีย":"🇸🇰","ออสเตรีย":"🇦🇹","นอร์เวย์":"🇳🇴","สก็อตแลนด์":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","ตุรกี":"🇹🇷",
+  "สาธารณรัฐเช็ก":"🇨🇿","บอสเนียฯ":"🇧🇦","จอร์แดน":"🇯🇴","อิรัก":"🇮🇶","อุซเบกิสถาน":"🇺🇿",
+  "อียิปต์":"🇪🇬","โกตดิวัวร์":"🇨🇮","คองโก DR":"🇨🇩","กาบูเวร์ดี":"🇨🇻","เฮติ":"🇭🇹",
+  "กือราเซา":"🇨🇼","นิวซีแลนด์":"🇳🇿","ปารากวัย":"🇵🇾","สโลวาเกีย":"🇸🇰",
+};
+
+function getFlag(name) { return FLAG_MAP[name] || "🏳"; }
+
+/* ============================================================
+   localStorage USER DB
+============================================================ */
+const DB_KEY = 'wc_h2h_db';
+function loadDB() { try { return JSON.parse(localStorage.getItem(DB_KEY)) || {}; } catch(e) { return {}; } }
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function pairKey(a,b) { return [a,b].sort().join('__vs__'); }
+
+function recordMatch(teamA, teamB, goalsA, goalsB) {
+  const db = loadDB();
+  const key = pairKey(teamA.name, teamB.name);
+  if (!db[key]) db[key] = { matches: [] };
+  const winner = goalsA > goalsB ? teamA.name : goalsB > goalsA ? teamB.name : 'draw';
+  db[key].matches.push({ date: new Date().toLocaleDateString('th-TH'), scoreA: goalsA, scoreB: goalsB, nameA: teamA.name, nameB: teamB.name, winner, source: 'predicted' });
+  saveDB(db);
+  refreshH2HDb();
+}
+
+/* ============================================================
+   MERGE HISTORICAL + USER DATA
+============================================================ */
+let activeYear = 'all';
+function setYear(y, btn) {
+  activeYear = y;
+  document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getMergedMatches(nameA, nameB, year) {
+  const key = pairKey(nameA, nameB);
+  // ข้อมูลย้อนหลัง
+  const hist = HISTORICAL.filter(m => {
+    const match = (m.nameA === nameA && m.nameB === nameB) || (m.nameA === nameB && m.nameB === nameA);
+    return match && (year === 'all' || m.year === year);
+  }).map(m => {
+    const flipped = m.nameA !== nameA;
+    return {
+      date: m.date + ' (' + m.year + ')',
+      nameA: flipped ? m.nameB : m.nameA,
+      nameB: flipped ? m.nameA : m.nameB,
+      scoreA: flipped ? m.scoreB : m.scoreA,
+      scoreB: flipped ? m.scoreA : m.scoreB,
+      winner: m.scoreA === m.scoreB ? 'draw' : (flipped ? (m.scoreB > m.scoreA ? nameA : nameB) : (m.scoreA > m.scoreB ? nameA : nameB)),
+      stage: m.stage,
+      source: 'historical',
+    };
+  });
+  // ข้อมูลผู้ใช้
+  const db = loadDB();
+  const user = ((db[key] || {}).matches || []).filter(m => year === 'all' || true);
+  return [...hist, ...user].reverse();
+}
+
+function getStats(nameA, nameB, year) {
+  const all = getMergedMatches(nameA, nameB, year);
+  let wA = 0, wB = 0, draws = 0, goalsA = 0, goalsB = 0;
+  all.forEach(m => {
+    if (m.winner === 'draw') draws++;
+    else if (m.winner === nameA) wA++;
+    else wB++;
+    goalsA += m.scoreA;
+    goalsB += m.scoreB;
+  });
+  return { total: all.length, wA, wB, draws, goalsA, goalsB, matches: all };
+}
+
+/* ============================================================
+   SHOW H2H
+============================================================ */
+function showH2H() {
+  const ai = document.getElementById('h2hA').value;
+  const bi = document.getElementById('h2hB').value;
+  const result = document.getElementById('h2hResult');
+  if (ai === '' || bi === '') { alert('กรุณาเลือกทีมทั้งสองฝั่ง'); return; }
+  if (ai === bi) { alert('กรุณาเลือกทีมที่ต่างกัน'); return; }
+
+  const a = TEAMS[ai], b = TEAMS[bi];
+  const stats = getStats(a.name, b.name, activeYear);
+
+  if (stats.total === 0) {
+    result.innerHTML = `<div class="h2h-card" style="margin-bottom:14px;"><div class="h2h-empty">ยังไม่พบข้อมูลการพบกันระหว่าง ${a.flag} ${a.name} และ ${b.flag} ${b.name}<br><small style="color:#bbb;">ในบอลโลก 2006–2022 ทีมนี้ไม่เคยพบกัน หรือลองเปลี่ยนตัวกรองปี</small></div></div>`;
+    return;
+  }
+
+  const histRows = stats.matches.slice(0, 10).map(m => {
+    const wClass = m.winner === 'draw' ? 'draw' : m.winner === a.name ? 'a' : 'b';
+    const wLabel = m.winner === 'draw' ? 'เสมอ' : m.winner;
+    const srcClass = m.source === 'historical' ? 'historical' : 'predicted';
+    const srcLabel = m.source === 'historical' ? '📜 จริง' : '🔮 ทำนาย';
+    return `<div class="h2h-match-row">
+      <div class="h2h-match-date">${m.date}</div>
+      <div class="h2h-match-teams">${getFlag(m.nameA)} ${m.nameA} vs ${getFlag(m.nameB)} ${m.nameB}${m.stage ? ' <span style="color:#ccc;font-size:10px;">· '+m.stage+'</span>' : ''}</div>
+      <div class="h2h-match-score">${m.scoreA} – ${m.scoreB}</div>
+      <div class="h2h-match-winner ${wClass}">${wLabel}</div>
+      <span class="h2h-match-source ${srcClass}">${srcLabel}</span>
+    </div>`;
+  }).join('');
+
+  result.innerHTML = `
+    <div class="h2h-card" style="margin-bottom:14px;">
+      <div class="h2h-card-header">
+        <div class="h2h-card-title">${a.flag} ${a.name} vs ${b.flag} ${b.name}</div>
+        <div class="h2h-card-sub">พบกัน ${stats.total} นัด</div>
+      </div>
+      <div class="h2h-summary">
+        <div class="h2h-team-col">
+          <div class="h2h-team-flag">${a.flag}</div>
+          <div class="h2h-team-name">${a.name}</div>
+          <div class="h2h-wins">${stats.wA}</div>
+          <div style="font-size:11px;color:#aaa;">ชนะ</div>
+        </div>
+        <div class="h2h-mid">
+          <div class="h2h-draw-num">${stats.draws}</div>
+          <div class="h2h-draw-lbl">เสมอ</div>
+        </div>
+        <div class="h2h-team-col">
+          <div class="h2h-team-flag">${b.flag}</div>
+          <div class="h2h-team-name">${b.name}</div>
+          <div class="h2h-wins">${stats.wB}</div>
+          <div style="font-size:11px;color:#aaa;">ชนะ</div>
+        </div>
+      </div>
+      <div class="h2h-stats-bar">
+        <div class="h2h-mini-stat"><div class="val">${stats.total}</div><div class="lbl">นัดทั้งหมด</div></div>
+        <div class="h2h-mini-stat"><div class="val">${stats.goalsA}</div><div class="lbl">ประตู ${a.name}</div></div>
+        <div class="h2h-mini-stat"><div class="val">${stats.goalsB}</div><div class="lbl">ประตู ${b.name}</div></div>
+      </div>
+      <div class="h2h-history">
+        <div class="h2h-history-title">
+          <span>ประวัติการพบกัน</span>
+          <div class="source-legend"><span class="h2h-match-source historical">📜 ข้อมูลจริง</span><span class="h2h-match-source predicted">🔮 ทำนาย</span></div>
+        </div>
+        ${histRows}
+      </div>
+    </div>`;
+}
+
+function refreshH2HDb() {
+  const db = loadDB();
+  const keys = Object.keys(db);
+  const countEl = document.getElementById('h2hDbCount');
+  const listEl = document.getElementById('h2hDbList');
+  if (!countEl || !listEl) return;
+  const total = keys.reduce((s,k) => s + db[k].matches.length, 0);
+  const histPairs = new Set(HISTORICAL.map(m => pairKey(m.nameA, m.nameB))).size;
+  countEl.textContent = `📜 ${histPairs} คู่จากบอลโลก 2006–2022  ·  🔮 ${keys.length} คู่ที่คุณทำนาย (${total} นัด)`;
+  listEl.innerHTML = '';
+  if (keys.length === 0) {
+    listEl.innerHTML = '<div style="font-size:13px;color:#aaa;padding:16px 0;">ยังไม่มีนัดทำนาย — ทำนายในแท็บ "ทำนายนัด" เพื่อสะสมสถิติ</div>';
+    return;
+  }
+  keys.sort((a,b) => db[b].matches.length - db[a].matches.length).forEach(key => {
+    const r = db[key];
+    const parts = key.split('__vs__');
+    const div = document.createElement('div');
+    div.className = 'h2h-pair-item';
+    div.onclick = () => {
+      const ai = TEAMS.findIndex(t => t.name === parts[0]);
+      const bi = TEAMS.findIndex(t => t.name === parts[1]);
+      if (ai !== -1) document.getElementById('h2hA').value = ai;
+      if (bi !== -1) document.getElementById('h2hB').value = bi;
+      showH2H();
+    };
+    div.innerHTML = `<div class="h2h-pair-teams">${getFlag(parts[0])} ${parts[0]} vs ${getFlag(parts[1])} ${parts[1]}</div><div class="h2h-pair-stats">🔮 ${r.matches.length} นัดทำนาย</div><div class="h2h-pair-badge">ดูสถิติ →</div>`;
+    listEl.appendChild(div);
+  });
+}
+
+function clearUserH2H() {
+  if (!confirm('ลบนัดที่คุณทำนายทั้งหมดใช่ไหม? (ข้อมูลย้อนหลังจะยังคงอยู่)')) return;
+  localStorage.removeItem(DB_KEY);
+  document.getElementById('h2hResult').innerHTML = '';
+  refreshH2HDb();
+}
+
+/* ============================================================
+   SELECTS
+============================================================ */
+function populateSelects() {
+  ['teamA','teamB','h2hA','h2hB'].forEach(id => {
+    const sel = document.getElementById(id);
+    TEAMS.forEach((t,i) => {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = t.flag + ' ' + t.name;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['predict','bracket','ranking','h2h'][i] === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'ranking') renderRanking();
+  if (name === 'bracket') renderBracket();
+  if (name === 'h2h') refreshH2HDb();
+}
+
+function clearResult() {
+  document.getElementById('resultBox').classList.remove('show');
+  document.getElementById('analysisPanel').classList.remove('show');
+}
+
+/* ============================================================
+   PREDICT
+============================================================ */
+function predictMatch() {
+  const ai = document.getElementById('teamA').value;
+  const bi = document.getElementById('teamB').value;
+  if (ai===''||bi==='') { alert('กรุณาเลือกทีมทั้งสองฝั่ง'); return; }
+  if (ai===bi) { alert('กรุณาเลือกทีมที่ต่างกัน'); return; }
+  const a = TEAMS[ai], b = TEAMS[bi];
+
+  // ปรับน้ำหนักด้วยข้อมูลย้อนหลัง
+  const hist = getStats(a.name, b.name, 'all');
+  let historicalBoost = 0;
+  if (hist.total > 0) historicalBoost = ((hist.wA - hist.wB) / hist.total) * 0.05;
+
+  const diff = (a.rating - b.rating) / 100;
+  let pA = Math.min(0.85, Math.max(0.15, 0.5 + diff*0.08 + historicalBoost + (Math.random()-0.5)*0.12));
+  let pB = 1 - pA;
+  const goalsA = Math.round(pA*2.5 + Math.random()*1.5);
+  const goalsB = Math.round(pB*2.5 + Math.random()*1.5);
+
+  document.getElementById('flagA').textContent = a.flag;
+  document.getElementById('nameA').textContent = a.name;
+  document.getElementById('flagB').textContent = b.flag;
+  document.getElementById('nameB').textContent = b.name;
+  document.getElementById('scoreDisplay').textContent = goalsA + ' – ' + goalsB;
+  document.getElementById('pctA').textContent = Math.round(pA*100)+'%';
+  document.getElementById('pctB').textContent = Math.round(pB*100)+'%';
+  document.getElementById('barA').style.width = Math.round(pA*100)+'%';
+  document.getElementById('barB').style.width = Math.round(pB*100)+'%';
+  const winner = goalsA>goalsB ? '🏆 '+a.flag+' '+a.name+' ชนะ!' : goalsB>goalsA ? '🏆 '+b.flag+' '+b.name+' ชนะ!' : '🤝 เสมอกัน';
+  document.getElementById('winnerText').textContent = winner;
+  document.getElementById('resultBox').classList.add('show');
+
+  recordMatch(a, b, goalsA, goalsB);
+  generateAnalysis(a, b, pA, pB, goalsA, goalsB, hist);
+}
+
+/* ============================================================
+   ANALYSIS
+============================================================ */
+function generateAnalysis(a, b, pA, pB, goalsA, goalsB, hist) {
+  const panel = document.getElementById('analysisPanel');
+  const loading = document.getElementById('analysisLoading');
+  const list = document.getElementById('scenarioList');
+  panel.classList.add('show'); loading.style.display = 'block'; list.style.display = 'none';
+
+  setTimeout(() => {
+    const diff = a.rating - b.rating;
+    const strongTeam = diff >= 0 ? a : b;
+    const weakTeam = diff >= 0 ? b : a;
+    const pStrong = diff >= 0 ? pA : pB;
+    const pWeak = 1 - pStrong;
+    const drawChance = Math.round(Math.max(10, 30 - Math.abs(diff)/20));
+    const winStrong = Math.round(pStrong*100 - drawChance/2);
+    const winWeak = Math.round(pWeak*100 - drawChance/2);
+
+    let histNote = '';
+    if (hist.total > 0) {
+      const leader = hist.wA > hist.wB ? a.name : hist.wB > hist.wA ? b.name : null;
+      histNote = leader ? ` (ข้อมูลย้อนหลัง: ${leader} ชนะมากกว่าใน ${hist.total} นัดที่ผ่านมา)` : ` (ข้อมูลย้อนหลัง: สูสีกันใน ${hist.total} นัดที่ผ่านมา)`;
+    }
+
+    const scenarios = [
+      { type:'likely', icon:'🏆', title:`${strongTeam.flag} ${strongTeam.name} ชนะตามราคา`, desc:`${strongTeam.name} มี FIFA rating สูงกว่า ${Math.abs(diff)} คะแนน มีแนวโน้มครองบอลและสร้างโอกาสได้มากกว่า${histNote}`, prob: winStrong+'%' },
+      { type:'possible', icon:'🤝', title:`เสมอ — ต่อเวลาหรือดวลจุดโทษ`, desc:`${weakTeam.name} อาจตั้งรับแน่นและรอโอกาสทำประตูจากการโต้กลับ หากเสมอในเวลาปกติ ผลจะตัดสินในช่วงต่อเวลาพิเศษหรือดวลจุดโทษ`, prob: drawChance+'%' },
+      { type:'upset', icon:'💥', title:`${weakTeam.flag} ${weakTeam.name} พลิกล็อก!`, desc:`บอลโลกเต็มไปด้วยเซอร์ไพรส์ เช่น ซาอุดีอาระเบียชนะอาร์เจนตินา (2022) หรือญี่ปุ่นชนะเยอรมนี (2022) — ไม่มีอะไรเป็นไปไม่ได้!`, prob: Math.max(5,winWeak)+'%' },
+    ];
+
+    list.innerHTML = '';
+    scenarios.forEach(s => {
+      const li = document.createElement('li');
+      li.className = 'scenario-item '+s.type;
+      li.innerHTML = `<div class="scenario-icon">${s.icon}</div><div class="scenario-content"><div class="scenario-title">${s.title}</div><div class="scenario-desc">${s.desc}</div></div><div class="scenario-prob">${s.prob}</div>`;
+      list.appendChild(li);
+    });
+    loading.style.display = 'none';
+    list.style.display = 'flex';
+  }, 600);
+}
+
+/* ============================================================
+   BRACKET & RANKING
+============================================================ */
+function shuffle(arr) {
+  const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;
+}
+const STAGES=['รอบกลุ่ม','รอบ 16 ทีม','รอบ 8 ทีม','รอบรองชนะเลิศ','รอบชิงชนะเลิศ'];
+const STAGE_COUNTS=[4,4,2,2,1];
+
+function renderBracket() {
+  let pool=shuffle(TEAMS).slice(0,16);
+  const list=document.getElementById('bracketList'); list.innerHTML='';
+  STAGES.forEach((stage,si)=>{
+    const count=Math.min(STAGE_COUNTS[si],Math.floor(pool.length/2));
+    const next=[];
+    for(let m=0;m<count;m++){
+      const a=pool[m*2],b=pool[m*2+1]; if(!a||!b)return;
+      const winner=Math.random()<0.5+(a.rating-b.rating)/800?a:b; next.push(winner);
+      const div=document.createElement('div'); div.className='bracket-item';
+      div.innerHTML=`<div class="stage-badge">${stage}</div><div class="matchup"><span>${a.flag} <span class="${winner===a?'win-team':'lose-team'}">${a.name}</span></span><span style="color:#ccc;font-size:11px;">vs</span><span>${b.flag} <span class="${winner===b?'win-team':'lose-team'}">${b.name}</span></span></div><span class="through-badge">${winner.flag} ผ่าน ✓</span>`;
+      list.appendChild(div);
+    }
+    pool=shuffle(next.length>=2?next:shuffle(TEAMS).slice(0,2));
+  });
+}
+
+function renderRanking() {
+  const sorted=[...TEAMS].sort((a,b)=>b.rating-a.rating);
+  const maxR=sorted[0].rating;
+  const list=document.getElementById('rankingList'); list.innerHTML='';
+  sorted.forEach((t,i)=>{
+    const pct=Math.round((t.rating/maxR)*100);
+    const div=document.createElement('div'); div.className='rank-item';
+    div.innerHTML=`<div class="rank-num">${i+1}</div><div class="rank-flag">${t.flag}</div><div class="rank-info"><div class="rank-name">${t.name} <span style="font-size:10px;color:#aaa;font-weight:400;">${t.conf}</span></div><div class="rank-sub">โอกาสแชมป์ ${t.champ}%</div><div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${pct}%;"></div></div></div><div class="rank-pts">${t.rating}</div>`;
+    list.appendChild(div);
+  });
+}
+
+populateSelects();
+renderBracket();
+refreshH2HDb();
+</script>
+</body>
+</html>
